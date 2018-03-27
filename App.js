@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Component } from 'react';
 import {
   Button,
   View,
@@ -64,7 +64,7 @@ class HomeScreen extends React.Component {
 
         // Switch to timer screen
         <Button
-          title="Go to timer",
+          title="Go to timer"
           onPress={() => this.props.navigation.navigate("Timer")}
         />
       </View>
@@ -114,15 +114,14 @@ class TimerScreen extends React.Component {
           handleComplete={ () => timerComplete() }
         />*/
         <Button
-          title="Pause",
+          title="Pause"
           onPress={() => this.setState({timeStart: false})}
           enabled={this.state.timerStart}
         />
         <Button
-          title={!this.state.timerStart ? "Start Icing Now" : "Pause"},
+          title={!this.state.timerStart ? "Start Icing Now" : "Pause"}
           onPress={() => this.timerStartOrPause()}
         />
-      </View>
       </View>
     );
   };
@@ -144,7 +143,7 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 15,
   },
-}
+});
 
 export default StackNavigator({
   Home: { screen: HomeScreen },
