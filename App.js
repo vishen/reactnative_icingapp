@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { StackNavigator } from 'react-navigation';
 
-// import { Timer } from 'react-native-stopwatch-timer'
+import { Timer } from 'react-native-stopwatch-timer'
 
 class HomeScreen extends React.Component {
   static navigationOptions = {
@@ -20,33 +20,31 @@ class HomeScreen extends React.Component {
 
   componentDidMount(){
     var that = this;
-    PushNotification.configure({
+    /*PushNotification.configure({
       onNotification: function(notification) {
         console.log("################################################################");
         console.log("Notification: " + notification);
         that.props.navigation.navigate("Details");
         notification.finish(PushNotificationIOS.FetchResult.NoData);
       },
-    });
+    });*/
   };
 
   // Initial defaults
   state = {
     notificationTiming: "2",
     isActive: false,
+    timerDuration: "20",
   };
 
   render() {
     return (
       <View style={styles.main}>
-        // Turn on / off and helptext
         <Switch
           onValueChange={ (value) => this.setState({isActive: value})}
           value={this.state.isActive}
         />
         <Text style={styles.helpText}> NOTE: Turning this off remove any scheduled notifications </Text>
-
-        // How often should we set a notification for
         <Text> Get reminded to ice every: </Text>
         <Picker
           style={{height:30, width:100}}
@@ -61,8 +59,20 @@ class HomeScreen extends React.Component {
           <Picker.Item label="5 Hours" value="5" />
           <Picker.Item label="6 Hours" value="6" />
         </Picker>
-
-        // Switch to timer screen
+        <Text> How long should the ice timer be:  </Text>
+        <Picker
+          style={{height:30, width:125}}
+          selectedValue={this.state.timerDuration}
+          onValueChange={(v, i) => this.setState({timerDuration: v})}
+          enabled={this.state.isActive}
+        >
+          <Picker.Item label="5 minutes" value="5" />
+          <Picker.Item label="10 minutes" value="10" />
+          <Picker.Item label="15 minutes" value="15" />
+          <Picker.Item label="20 minutes" value="20" />
+          <Picker.Item label="25 minutes" value="25" />
+          <Picker.Item label="30 minutes" value="30" />
+        </Picker>
         <Button
           title="Go to timer"
           onPress={() => this.props.navigation.navigate("Timer")}
@@ -74,49 +84,33 @@ class HomeScreen extends React.Component {
 
 class TimerScreen extends React.Component {
   static navigationOptions = {
-    Title: "Ice Timer",
+    title: "Timer",
   };
 
   state = {
     timerStart: false,
-    timerDuration: 20 * 1000,
+    timerDurationSeconds: 20 * 1000,
   };
 
   timerComplete() {
     // Remove all notifications AND
     // Schedule a new notification
+    this.setState({timerStart: false});
   };
 
   timerStartOrPause() {
     // Remove all notificatinos AND
     // Schedule a new notification
-    this.setState({timeStart: !this.state.timerStart});
+    this.setState({timerStart: !this.state.timerStart});
   };
 
   render() {
     return (
       <View style={styles.timerScreen}>
-        <Text> Select how often to ice:  </Text>
-        <Picker
-          style={{height:30, width:100}}
-          selectedValue={this.state.timerDuration}
-          onValueChange={(v, i) => this.setState({timerDuration: Number(v) * 1000})}
-        >
-          <Picker.Item label="5 minutes" value="5" />
-          <Picker.Item label="10 minutes" value="10" />
-          <Picker.Item label="15 minutes" value="15" />
-          <Picker.Item label="20 minutes" value="20" />
-          <Picker.Item label="25 minutes" value="25" />
-          <Picker.Item label="30 minutes" value="30" />
-        </Picker>
-        /*<Timer
-          totalDuration={this.state.timerDuration} msecs start={this.state.timerStart}
-          handleComplete={ () => timerComplete() }
-        />*/
-        <Button
-          title="Pause"
-          onPress={() => this.setState({timeStart: false})}
-          enabled={this.state.timerStart}
+        <Timer
+          totalDuration={this.state.timerDurationSeconds} msecs start={this.state.timerStart}
+          handleFinish={ () => this.timerComplete() }
+          options={timerStyleOptions}
         />
         <Button
           title={!this.state.timerStart ? "Start Icing Now" : "Pause"}
@@ -127,10 +121,24 @@ class TimerScreen extends React.Component {
   };
 }
 
+const timerStyleOptions = {
+  container: {
+    backgroundColor: "#FFF",
+    padding: 5,
+    borderRadius: 2,
+    width: 220,
+  },
+  text: {
+    fontSize: 30,
+    color: "#000",
+    marginLeft: 7,
+  }
+};
+
 const styles = StyleSheet.create({
   main: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
@@ -150,7 +158,8 @@ export default StackNavigator({
   Timer: { screen: TimerScreen },
 }, { initialRouteName: "Home" });
 
-/*import React, { Component } from 'react';
+/*
+import React, { Component } from 'react';
 import {
   Platform,
   StyleSheet,
@@ -201,4 +210,5 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginBottom: 5,
   },
-});*/
+});
+*/
