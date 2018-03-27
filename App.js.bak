@@ -1,0 +1,169 @@
+import React from 'react';
+import {
+  Button,
+  View,
+  StyleSheet,
+  Text,
+  Picker,
+  PushNotificationIOS,
+  AsyncStorage,
+  Switch,
+} from 'react-native';
+import { StackNavigator } from 'react-navigation';
+
+import { Timer } from 'react-native-stopwatch-timer'
+
+var PushNotification = require("react-native-push-notification");
+
+
+function cancelAllNotifications() {
+  PushNotification.cancelAllLocalNotifications();
+};
+
+async function createNotification(notificationTiming) {
+  var timing = Number(notificationTiming);
+  var dateScheduled = new Date(Date.now() + timing);
+
+  PushNotification.localNotificationSchedule({
+    title: "My notification title - " + notificationTiming,
+    message: "My Notification Message",
+    date: dateScheduled,
+  });
+};
+
+async function getTiming() {
+  try {
+    var timing = await AsyncStorage.getItem("@NotificationTiming:key");
+
+    if (timing !== null) {
+      timing = "2";
+    }
+    return timing;
+  } catch(e) {
+    console.log("CAUGHT ERROR: ", e);
+
+  }
+
+  return "2"
+};
+
+async function updateTiming(timing) {
+  await AsyncStorage.setItem("@NotificationTiming:key", timing);
+};
+
+
+class HomeScreen extends React.Component {
+  static navigationOptions = {
+    title: "Home",
+  };
+
+  componentDidMount(){
+    var that = this;
+    PushNotification.configure({
+      onNotification: function(notification) {
+        console.log("################################################################");
+        console.log("Notification: " + notification);
+        that.props.navigation.navigate("Details");
+        notification.finish(PushNotificationIOS.FetchResult.NoData);
+      },
+    });
+  }
+
+  notification = () => {
+    updateTiming(this.state.notificationTiming);
+    createNotification(this.state.notificationTiming);
+  }
+
+  state = {
+    notificationTiming: getTiming(),
+    isActive: false,
+  };
+
+  render() {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Switch
+          onValueChange={ (value) => this.setState({isActive: value})}
+          value={this.state.isActive}
+        />
+        <Text>Home Screen</Text>
+        <Button
+          title="Create new notification"
+          onPress={ () => this.notification()}
+          disabled={!this.state.isActive}
+        />
+        <Picker
+          style={{height:30, width:100}}
+          // itemStyle={styles.pickerItem}
+          selectedValue={this.state.notificationTiming}
+          onValueChange={(v, i) => this.setState({notificationTiming: v})}
+          enabled={this.state.isActive}
+        >
+          <Picker.Item label="2 Hours" value="2" />
+          <Picker.Item label="3 Hours" value="3" />
+          <Picker.Item label="4 Hours" value="4" />
+        </Picker>
+
+        <Button
+          title="Go to Details"
+          onPress={() => this.props.navigation.navigate('Details')}
+        />
+      </View>
+    );
+  }
+}
+
+class DetailsScreen extends React.Component {
+  static navigationOptions = {
+    title: "Details",
+  };
+
+  state = {
+    timerStart: false,
+  }
+
+  timerComplete() {
+
+  }
+
+  render() {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Timer!</Text>
+        <Timer
+          totalDuration={10 * 1000} msecs start={this.state.timerStart}
+          handleComplete= {() => timerComplete()}
+        />
+        <Button
+          title="Toggle Timer"
+          onPress={() => this.setState({timerStart: !this.state.timerStart})}
+        />
+      </View>
+    );
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+
+export default StackNavigator(
+  {
+    Home: {
+      screen: HomeScreen,
+    },
+    Details: {
+      screen: DetailsScreen,
+    },
+  },
+  {
+    initialRouteName: 'Home',
+  }
+);
+
