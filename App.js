@@ -75,12 +75,12 @@ class HomeScreen extends React.Component {
       }
     });
     AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
-      if (v !== undefined) {
+      if (v !== undefined && v !== null) {
         this.setState({notificationTiming: v});
       }
     });
     AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
-      if (v !== undefined) {
+      if (v !== undefined && v !== null) {
         this.setState({timerDuration: v});
       }
     });
@@ -88,7 +88,7 @@ class HomeScreen extends React.Component {
 
   // Initial defaults
   state = {
-    notificationTiming: "3600",
+    notificationTiming: "7200",
     isActive: false,
     timerDuration: "20",
   };
