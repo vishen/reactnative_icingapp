@@ -13,6 +13,42 @@ import { StackNavigator } from 'react-navigation';
 
 import { Timer } from 'react-native-stopwatch-timer'
 
+var PushNotification = require("react-native-push-notification");
+
+function cancelAllNotifications() {
+  PushNotification.cancelAllLocalNotifications();
+};
+
+function formatTimerDuration(v) {
+  return Number(v) * 60 * 1000;  // Currently this is in seconds, needs to be in minutes!
+}
+
+function createNotification() {
+  console.log("createNotification()");
+  AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
+    var seconds = Number(v);
+    var dateScheduled = new Date(Date.now() + seconds);
+    var message;
+    if (seconds < 3600) {
+      message = "It has been " + v + " seconds";
+    } else if (seconds == 3600) {
+      message = "It has been 1 hour";
+    } else {
+      message = "It has been " + v + " hours"
+    }
+    console.log("createNotification(): ", v, seconds, dateScheduled);
+    PushNotification.localNotificationSchedule({
+      title: "Time to ice",
+      message: message,
+      date: dateScheduled,
+    });
+  });
+};
+
+async function storageAdd(key, value) {
+  await AsyncStorage.setItem("@icingappv1." + key + ":key", value);
+}
+
 class HomeScreen extends React.Component {
   static navigationOptions = {
     title: "Home",
@@ -20,14 +56,29 @@ class HomeScreen extends React.Component {
 
   componentDidMount(){
     var that = this;
-    /*PushNotification.configure({
+    PushNotification.configure({
       onNotification: function(notification) {
         console.log("################################################################");
-        console.log("Notification: " + notification);
-        that.props.navigation.navigate("Details");
+        console.log("Notification: ",  notification);
+        AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
+          that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v)});
+        });
         notification.finish(PushNotificationIOS.FetchResult.NoData);
       },
-    });*/
+    });
+    AsyncStorage.getItem("@icingappv1.isActive:key").then((v) => {
+      if (v === "true") {
+        this.setState({isActive: true});
+      } else {
+        this.setState({isActive: false});
+      }
+    });
+    AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
+      this.setState({notificationTiming: v});
+    });
+    AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
+      this.setState({timerDuration: v});
+    });
   };
 
   // Initial defaults
@@ -37,34 +88,64 @@ class HomeScreen extends React.Component {
     timerDuration: "20",
   };
 
+  updateTimerDuration(v) {
+    this.setState({timerDuration: v});
+    storageAdd("timerDuration", v);
+  };
+
+  updateIsActive(v) {
+    cancelAllNotifications();
+    this.setState({isActive: v});
+    if (v === true){
+      storageAdd("isActive", "true");
+      createNotification();
+    } else {
+      storageAdd("isActive", "false");
+    }
+  };
+
+  updateNotificationTiming(v) {
+    // TODO(): This isn't concurrent safe - needs to be a callback on the storageAdd or something!
+    cancelAllNotifications();
+    storageAdd("notificationTiming", v);
+    this.setState({notificationTiming: v});
+    createNotification();
+  };
+
   render() {
     return (
       <View style={styles.main}>
+        <View style={styles.mainChild}>
         <Switch
-          onValueChange={ (value) => this.setState({isActive: value})}
+          onValueChange={ (v) => this.updateIsActive(v)}
           value={this.state.isActive}
         />
         <Text style={styles.helpText}> NOTE: Turning this off remove any scheduled notifications </Text>
+        </View>
+        <View style={styles.mainChild}>
         <Text> Get reminded to ice every: </Text>
         <Picker
           style={{height:30, width:100}}
           selectedValue={this.state.notificationTiming}
-          onValueChange={(v, i) => this.setState({notificationTiming: v})}
+          onValueChange={(v, i) => this.updateNotificationTiming(v)}
           enabled={this.state.isActive}
         >
-          <Picker.Item label="1 Hour" value="1" />
-          <Picker.Item label="2 Hours" value="2" />
-          <Picker.Item label="3 Hours" value="3" />
-          <Picker.Item label="4 Hours" value="4" />
-          <Picker.Item label="5 Hours" value="5" />
-          <Picker.Item label="6 Hours" value="6" />
+          <Picker.Item label="30 seconds" value="30" />
+          <Picker.Item label="1 minute" value="60" />
+          <Picker.Item label="1 Hour" value="3600" />
+          <Picker.Item label="2 Hours" value="7200" />
+          <Picker.Item label="3 Hours" value="10800" />
+          <Picker.Item label="4 Hours" value="14400" />
+          <Picker.Item label="5 Hours" value="18000" />
+          <Picker.Item label="6 Hours" value="21600" />
         </Picker>
+        </View>
+        <View style={styles.mainChild}>
         <Text> How long should the ice timer be:  </Text>
         <Picker
           style={{height:30, width:125}}
           selectedValue={this.state.timerDuration}
-          onValueChange={(v, i) => this.setState({timerDuration: v})}
-          enabled={this.state.isActive}
+          onValueChange={(v, i) => this.updateTimerDuration(v)}
         >
           <Picker.Item label="5 minutes" value="5" />
           <Picker.Item label="10 minutes" value="10" />
@@ -73,34 +154,45 @@ class HomeScreen extends React.Component {
           <Picker.Item label="25 minutes" value="25" />
           <Picker.Item label="30 minutes" value="30" />
         </Picker>
+        </View>
+        <View style={styles.mainChild}>
         <Button
           title="Go to timer"
-          onPress={() => this.props.navigation.navigate("Timer")}
+          onPress={() => this.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(this.state.timerDuration)})}
         />
+        </View>
       </View>
     );
   }
 }
 
 class TimerScreen extends React.Component {
+  // TODO(): See if there is a callback to call before going back a screen, we need
+  // to stop the timer running.
   static navigationOptions = {
     title: "Timer",
   };
 
   state = {
     timerStart: false,
-    timerDurationSeconds: 20 * 1000,
+    timerDurationSeconds: this.props.navigation.state.params.timerDuration,
   };
 
   timerComplete() {
     // Remove all notifications AND
     // Schedule a new notification
+    cancelAllNotifications();
+    createNotification();
+
     this.setState({timerStart: false});
   };
 
   timerStartOrPause() {
     // Remove all notificatinos AND
     // Schedule a new notification
+    cancelAllNotifications();
+    createNotification();
+
     this.setState({timerStart: !this.state.timerStart});
   };
 
@@ -113,7 +205,7 @@ class TimerScreen extends React.Component {
           options={timerStyleOptions}
         />
         <Button
-          title={!this.state.timerStart ? "Start Icing Now" : "Pause"}
+          title={!this.state.timerStart ? "Start" : "Pause"}
           onPress={() => this.timerStartOrPause()}
         />
       </View>
@@ -127,6 +219,7 @@ const timerStyleOptions = {
     padding: 5,
     borderRadius: 2,
     width: 220,
+    paddingBottom: 30,
   },
   text: {
     fontSize: 30,
@@ -141,6 +234,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
+  },
+  mainChild: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   timerScreen: {
     flex: 1,
