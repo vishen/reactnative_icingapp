@@ -4,14 +4,14 @@ import {
   View,
   StyleSheet,
   Text,
-  Picker,
   PushNotificationIOS,
   AsyncStorage,
   Switch,
+  Platform,
 } from 'react-native';
 import { StackNavigator } from 'react-navigation';
-
 import { Timer } from 'react-native-stopwatch-timer'
+import Picker from 'react-native-universal-picker'
 
 var PushNotification = require("react-native-push-notification");
 
@@ -75,16 +75,20 @@ class HomeScreen extends React.Component {
       }
     });
     AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
-      this.setState({notificationTiming: v});
+      if (v !== undefined) {
+        this.setState({notificationTiming: v});
+      }
     });
     AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
-      this.setState({timerDuration: v});
+      if (v !== undefined) {
+        this.setState({timerDuration: v});
+      }
     });
   };
 
   // Initial defaults
   state = {
-    notificationTiming: "2",
+    notificationTiming: "3600",
     isActive: false,
     timerDuration: "20",
   };
@@ -127,6 +131,7 @@ class HomeScreen extends React.Component {
         <Text> Get reminded to ice every: </Text>
         <Picker
           style={{height:30, width:150}}
+          itemStyle={{textAlign: "center"}}
           selectedValue={this.state.notificationTiming}
           onValueChange={(v, i) => this.updateNotificationTiming(v)}
           enabled={this.state.isActive}
@@ -145,8 +150,10 @@ class HomeScreen extends React.Component {
         <Text> How long should the ice timer be:  </Text>
         <Picker
           style={{height:30, width:150}}
+          itemStyle={{textAlign: "center"}}
           selectedValue={this.state.timerDuration}
           onValueChange={(v, i) => this.updateTimerDuration(v)}
+          mode="dialog"
         >
           <Picker.Item label="5 minutes" value="5" />
           <Picker.Item label="10 minutes" value="10" />
@@ -256,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
   },
   helpText: {
-    fontSize: 15,
+    fontSize: 11,
   },
 });
 
@@ -265,57 +272,3 @@ export default StackNavigator({
   Timer: { screen: TimerScreen },
 }, { initialRouteName: "Home" });
 
-/*
-import React, { Component } from 'react';
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
-
-const instructions = Platform.select({
-  ios: 'Press Cmd+R to reload,\n' +
-    'Cmd+D or shake for dev menu',
-  android: 'Double tap R on your keyboard to reload,\n' +
-    'Shake or press menu button for dev menu',
-});
-
-type Props = {};
-export default class App extends Component<Props> {
-  render() {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Welcome to React Native!
-        </Text>
-        <Text style={styles.instructions}>
-          To get started, edit App.js
-        </Text>
-        <Text style={styles.instructions}>
-          {instructions}
-        </Text>
-      </View>
-    );
-  }
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5FCFF',
-  },
-  welcome: {
-    fontSize: 20,
-    textAlign: 'center',
-    margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
-});
-*/
