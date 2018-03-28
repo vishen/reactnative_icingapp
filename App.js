@@ -27,7 +27,8 @@ function createNotification() {
   console.log("createNotification()");
   AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
     var seconds = Number(v);
-    var dateScheduled = new Date(Date.now() + seconds);
+    var now = Date.now();
+    var dateScheduled = new Date(now + seconds * 1000);
     var message;
     if (seconds < 3600) {
       message = "It has been " + v + " seconds";
@@ -36,9 +37,9 @@ function createNotification() {
     } else {
       message = "It has been " + v + " hours"
     }
-    console.log("createNotification(): ", v, seconds, dateScheduled);
+    console.log("createNotification(): ", v, now, seconds, dateScheduled);
     PushNotification.localNotificationSchedule({
-      title: "Time to ice",
+      title: "Time to ice!",
       message: message,
       date: dateScheduled,
     });
@@ -61,7 +62,7 @@ class HomeScreen extends React.Component {
         console.log("################################################################");
         console.log("Notification: ",  notification);
         AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
-          that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v)});
+          that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v), canCreateNotifications: true});
         });
         notification.finish(PushNotificationIOS.FetchResult.NoData);
       },
@@ -125,7 +126,7 @@ class HomeScreen extends React.Component {
         <View style={styles.mainChild}>
         <Text> Get reminded to ice every: </Text>
         <Picker
-          style={{height:30, width:100}}
+          style={{height:30, width:150}}
           selectedValue={this.state.notificationTiming}
           onValueChange={(v, i) => this.updateNotificationTiming(v)}
           enabled={this.state.isActive}
@@ -143,7 +144,7 @@ class HomeScreen extends React.Component {
         <View style={styles.mainChild}>
         <Text> How long should the ice timer be:  </Text>
         <Picker
-          style={{height:30, width:125}}
+          style={{height:30, width:150}}
           selectedValue={this.state.timerDuration}
           onValueChange={(v, i) => this.updateTimerDuration(v)}
         >
@@ -158,7 +159,10 @@ class HomeScreen extends React.Component {
         <View style={styles.mainChild}>
         <Button
           title="Go to timer"
-          onPress={() => this.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(this.state.timerDuration)})}
+          onPress={() => this.props.navigation.navigate("Timer", {
+            timerDuration: formatTimerDuration(this.state.timerDuration),
+            canCreateNotifications: this.state.isActive,
+          })}
         />
         </View>
       </View>
@@ -176,13 +180,16 @@ class TimerScreen extends React.Component {
   state = {
     timerStart: false,
     timerDurationSeconds: this.props.navigation.state.params.timerDuration,
+    canCreateNotifications: this.props.navigation.state.params.canCreateNotifications,
   };
 
   timerComplete() {
     // Remove all notifications AND
     // Schedule a new notification
-    cancelAllNotifications();
-    createNotification();
+    if (this.state.canCreateNotifications) {
+      cancelAllNotifications();
+      createNotification();
+    }
 
     this.setState({timerStart: false});
   };
@@ -190,8 +197,10 @@ class TimerScreen extends React.Component {
   timerStartOrPause() {
     // Remove all notificatinos AND
     // Schedule a new notification
-    cancelAllNotifications();
-    createNotification();
+    if (this.state.canCreateNotifications) {
+      cancelAllNotifications();
+      createNotification();
+    }
 
     this.setState({timerStart: !this.state.timerStart});
   };
@@ -224,7 +233,7 @@ const timerStyleOptions = {
   text: {
     fontSize: 30,
     color: "#000",
-    marginLeft: 7,
+    marginLeft: 20,
   }
 };
 
@@ -233,7 +242,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    backgroundColor: '#FFF',
   },
   mainChild: {
     flex: 1,
@@ -244,7 +253,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5FCFF',
+    backgroundColor: '#FFF',
   },
   helpText: {
     fontSize: 15,
