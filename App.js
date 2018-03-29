@@ -31,11 +31,11 @@ function createNotification() {
     var dateScheduled = new Date(now + seconds * 1000);
     var message;
     if (seconds < 3600) {
-      message = "It has been " + v + " seconds";
+      message = "It has been " + v + " seconds, time to ice!";
     } else if (seconds == 3600) {
-      message = "It has been 1 hour";
+      message = "It has been 1 hour, time to ice!";
     } else {
-      message = "It has been " + v + " hours"
+      message = "It has been " + v + " hours, time to ice!"
     }
     console.log("createNotification(): ", v, now, seconds, dateScheduled);
     PushNotification.localNotificationSchedule({
