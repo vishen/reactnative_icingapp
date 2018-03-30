@@ -39,7 +39,7 @@ function createNotification() {
     }
     console.log("createNotification(): ", v, now, seconds, dateScheduled);
     PushNotification.localNotificationSchedule({
-      title: "Time to ice!",
+      title: "Icing time!",
       message: message,
       date: dateScheduled,
     });
@@ -147,7 +147,7 @@ class HomeScreen extends React.Component {
         </Picker>
         </View>
         <View style={styles.mainChild}>
-        <Text> How long should the ice timer be:  </Text>
+        <Text> You will be icing for:  </Text>
         <Picker
           style={{height:30, width:150}}
           itemStyle={{textAlign: "center"}}
