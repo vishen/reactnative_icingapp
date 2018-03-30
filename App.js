@@ -236,13 +236,13 @@ const timerStyleOptions = {
     backgroundColor: "#FFF",
     padding: 5,
     borderRadius: 2,
-    width: 220,
+    width: 250,
     paddingBottom: 30,
   },
   text: {
     fontSize: 30,
     color: "#000",
-    marginLeft: 20,
+    marginLeft: 30,
   }
 };
 
