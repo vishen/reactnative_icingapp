@@ -1,4 +1,4 @@
-package com.reactnative_icingapp;
+package com.iceme;
 
 import android.app.Application;
 

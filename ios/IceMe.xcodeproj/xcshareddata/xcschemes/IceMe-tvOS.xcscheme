@@ -29,9 +29,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-               BuildableName = "reactnative_icingapp-tvOS.app"
-               BlueprintName = "reactnative_icingapp-tvOS"
-               ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+               BuildableName = "IceMe-tvOS.app"
+               BlueprintName = "IceMe-tvOS"
+               ReferencedContainer = "container:IceMe.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -43,9 +43,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "reactnative_icingapp-tvOSTests.xctest"
-               BlueprintName = "reactnative_icingapp-tvOSTests"
-               ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+               BuildableName = "IceMe-tvOSTests.xctest"
+               BlueprintName = "IceMe-tvOSTests"
+               ReferencedContainer = "container:IceMe.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -61,9 +61,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2D02E48F1E0B4A5D006451C7"
-               BuildableName = "reactnative_icingapp-tvOSTests.xctest"
-               BlueprintName = "reactnative_icingapp-tvOSTests"
-               ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+               BuildableName = "IceMe-tvOSTests.xctest"
+               BlueprintName = "IceMe-tvOSTests"
+               ReferencedContainer = "container:IceMe.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -71,9 +71,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "reactnative_icingapp-tvOS.app"
-            BlueprintName = "reactnative_icingapp-tvOS"
-            ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+            BuildableName = "IceMe-tvOS.app"
+            BlueprintName = "IceMe-tvOS"
+            ReferencedContainer = "container:IceMe.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -94,9 +94,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "reactnative_icingapp-tvOS.app"
-            BlueprintName = "reactnative_icingapp-tvOS"
-            ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+            BuildableName = "IceMe-tvOS.app"
+            BlueprintName = "IceMe-tvOS"
+            ReferencedContainer = "container:IceMe.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <AdditionalOptions>
@@ -113,9 +113,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "2D02E47A1E0B4A5D006451C7"
-            BuildableName = "reactnative_icingapp-tvOS.app"
-            BlueprintName = "reactnative_icingapp-tvOS"
-            ReferencedContainer = "container:reactnative_icingapp.xcodeproj">
+            BuildableName = "IceMe-tvOS.app"
+            BlueprintName = "IceMe-tvOS"
+            ReferencedContainer = "container:IceMe.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -103,6 +103,8 @@ class HomeScreen extends React.Component {
     this.setState({isActive: v});
     if (v === true){
       storageAdd("isActive", "true");
+      storageAdd("notificationTiming", this.state.notificationTiming);
+      storageAdd("timerDuration", this.state.timerDuration);
       createNotification();
     } else {
       storageAdd("isActive", "false");
