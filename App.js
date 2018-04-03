@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {
   Button,
+  AppState,
   View,
   StyleSheet,
   Text,
@@ -20,7 +21,7 @@ function cancelAllNotifications() {
 };
 
 function formatTimerDuration(v) {
-  return Number(v) * 60 * 1000;  // Currently this is in seconds, needs to be in minutes!
+  return Number(v) * 60 * 1000;
 }
 
 function createNotification() {
@@ -35,7 +36,7 @@ function createNotification() {
     } else if (seconds == 3600) {
       message = "It has been 1 hour, time to ice!";
     } else {
-      message = "It has been " + v + " hours, time to ice!"
+      message = "It has been " + (v / (60 * 60)) + " hours, time to ice!"
     }
     console.log("createNotification(): ", v, now, seconds, dateScheduled);
     PushNotification.localNotificationSchedule({
@@ -61,9 +62,11 @@ class HomeScreen extends React.Component {
       onNotification: function(notification) {
         console.log("################################################################");
         console.log("Notification: ",  notification);
-        AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
-          that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v), canCreateNotifications: true});
-        });
+        if (notification.id != "1337") {
+          AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
+            that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v), canCreateNotifications: true});
+          });
+        }
         notification.finish(PushNotificationIOS.FetchResult.NoData);
       },
     });
@@ -99,13 +102,11 @@ class HomeScreen extends React.Component {
   };
 
   updateIsActive(v) {
-    cancelAllNotifications();
     this.setState({isActive: v});
     if (v === true){
       storageAdd("isActive", "true");
       storageAdd("notificationTiming", this.state.notificationTiming);
       storageAdd("timerDuration", this.state.timerDuration);
-      createNotification();
     } else {
       storageAdd("isActive", "false");
     }
@@ -113,10 +114,8 @@ class HomeScreen extends React.Component {
 
   updateNotificationTiming(v) {
     // TODO(): This isn't concurrent safe - needs to be a callback on the storageAdd or something!
-    cancelAllNotifications();
     storageAdd("notificationTiming", v);
     this.setState({notificationTiming: v});
-    createNotification();
   };
 
   render() {
@@ -127,7 +126,7 @@ class HomeScreen extends React.Component {
           onValueChange={ (v) => this.updateIsActive(v)}
           value={this.state.isActive}
         />
-        <Text style={styles.helpText}> NOTE: Turning this off remove any scheduled notifications </Text>
+        <Text style={styles.helpText}> NOTE: Turning this off removes any scheduled notifications </Text>
         </View>
         <View style={styles.mainChild}>
         <Text> Get reminded to ice every: </Text>
@@ -138,8 +137,6 @@ class HomeScreen extends React.Component {
           onValueChange={(v, i) => this.updateNotificationTiming(v)}
           enabled={this.state.isActive}
         >
-          <Picker.Item label="30 seconds" value="30" />
-          <Picker.Item label="1 minute" value="60" />
           <Picker.Item label="1 Hour" value="3600" />
           <Picker.Item label="2 Hours" value="7200" />
           <Picker.Item label="3 Hours" value="10800" />
@@ -157,6 +154,7 @@ class HomeScreen extends React.Component {
           onValueChange={(v, i) => this.updateTimerDuration(v)}
           mode="dialog"
         >
+          <Picker.Item label="1 minute" value="1" />
           <Picker.Item label="5 minutes" value="5" />
           <Picker.Item label="10 minutes" value="10" />
           <Picker.Item label="15 minutes" value="15" />
@@ -166,6 +164,7 @@ class HomeScreen extends React.Component {
         </Picker>
         </View>
         <View style={styles.mainChild}>
+        <Text> Start icing timer to begin cycle </Text>
         <Button
           title="Go to timer"
           onPress={() => this.props.navigation.navigate("Timer", {
@@ -186,10 +185,37 @@ class TimerScreen extends React.Component {
     title: "Timer",
   };
 
+
+  componentDidMount() {
+    AppState.addEventListener('change', this._handleAppStateChange);
+  };
+
+  componentWillUnmount() {
+    AppState.removeEventListener('change', this._handleAppStateChange);
+  };
+
+  _handleAppStateChange = (nextAppState) => {
+
+    if (nextAppState != "active") {
+      cancelAllNotifications();
+      PushNotification.localNotificationSchedule({
+        id: "1337",
+        message: "Icing timer for " + (this.state.timerDurationSeconds / 1000) + " minutes has finished",
+        date: new Date(Date.now() + ((this.timeRemaining + 2) * 1000))
+      });
+    } else {
+    }
+
+  };
+
+  timeRemaining = 15000;
+
   state = {
     timerStart: false,
-    timerDurationSeconds: this.props.navigation.state.params.timerDuration,
+    //timerDurationSeconds: this.props.navigation.state.params.timerDuration,
+    timerDurationSeconds: 15000,
     canCreateNotifications: this.props.navigation.state.params.canCreateNotifications,
+    appState: "active",
   };
 
   timerComplete() {
@@ -211,15 +237,32 @@ class TimerScreen extends React.Component {
       createNotification();
     }
 
-    this.setState({timerStart: !this.state.timerStart});
+    this.setState({
+      timerStart: !this.state.timerStart,
+    });
+  };
+
+  getTimeCallback(formattedTime) {
+    var splitTime = formattedTime.split(":");
+    var secondsLeft = Number(splitTime[2]);
+
+    this.timeRemaining = secondsLeft;
+
   };
 
   render() {
     return (
       <View style={styles.timerScreen}>
+        <View style={{position: "absolute", top: 30}}>
+      <View style={styles.timerScreen}>
+
+      </View>
+        <Text style={styles.helpText}> NOTE: Going back a screen will reset the timer</Text>
+        </View>
         <Timer
           totalDuration={this.state.timerDurationSeconds} msecs start={this.state.timerStart}
           handleFinish={ () => this.timerComplete() }
+          getTime = { (v) => this.getTimeCallback(v) }
           options={timerStyleOptions}
         />
         <Button
