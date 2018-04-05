@@ -10,7 +10,7 @@ import {
   Switch,
   Platform,
 } from 'react-native';
-import { StackNavigator } from 'react-navigation';
+import { StackNavigator, NavigationActions } from 'react-navigation';
 import { Timer } from 'react-native-stopwatch-timer'
 import Picker from 'react-native-universal-picker'
 
@@ -24,10 +24,11 @@ function formatTimerDuration(v) {
   return Number(v) * 60 * 1000;
 }
 
-function createNotification() {
+function createNotification(extraTime) {
+  extraTime = extraTime || 0;
   console.log("createNotification()");
   AsyncStorage.getItem("@icingappv1.notificationTiming:key").then((v) => {
-    var seconds = Number(v);
+    var seconds = Number(v) + extraTime;
     var now = Date.now();
     var dateScheduled = new Date(now + seconds * 1000);
     var message;
@@ -38,7 +39,7 @@ function createNotification() {
     } else {
       message = "It has been " + (v / (60 * 60)) + " hours, time to ice!"
     }
-    console.log("createNotification(): ", v, now, seconds, dateScheduled);
+    console.log("createNotification(): ", v, seconds, extraTime, dateScheduled);
     PushNotification.localNotificationSchedule({
       title: "Icing time!",
       message: message,
@@ -57,12 +58,13 @@ class HomeScreen extends React.Component {
   };
 
   componentDidMount(){
+    this._mounted = true;
     var that = this;
     PushNotification.configure({
       onNotification: function(notification) {
         console.log("################################################################");
         console.log("Notification: ",  notification);
-        if (notification.id != "1337") {
+        if (this._mounted) {//notification.id != "1337") {
           AsyncStorage.getItem("@icingappv1.timerDuration:key").then((v) => {
             that.props.navigation.navigate("Timer", {timerDuration: formatTimerDuration(v), canCreateNotifications: true});
           });
@@ -89,6 +91,10 @@ class HomeScreen extends React.Component {
     });
   };
 
+  componentWillUnmount() {
+    this._mounted = false;
+  }
+
   // Initial defaults
   state = {
     notificationTiming: "7200",
@@ -109,6 +115,7 @@ class HomeScreen extends React.Component {
       storageAdd("timerDuration", this.state.timerDuration);
     } else {
       storageAdd("isActive", "false");
+      cancelAllNotifications();
     }
   };
 
@@ -154,7 +161,6 @@ class HomeScreen extends React.Component {
           onValueChange={(v, i) => this.updateTimerDuration(v)}
           mode="dialog"
         >
-          <Picker.Item label="1 minute" value="1" />
           <Picker.Item label="5 minutes" value="5" />
           <Picker.Item label="10 minutes" value="10" />
           <Picker.Item label="15 minutes" value="15" />
@@ -169,7 +175,7 @@ class HomeScreen extends React.Component {
           title="Go to timer"
           onPress={() => this.props.navigation.navigate("Timer", {
             timerDuration: formatTimerDuration(this.state.timerDuration),
-            canCreateNotifications: this.state.isActive,
+            canCreateNotifications: true,
           })}
         />
         </View>
@@ -179,12 +185,9 @@ class HomeScreen extends React.Component {
 }
 
 class TimerScreen extends React.Component {
-  // TODO(): See if there is a callback to call before going back a screen, we need
-  // to stop the timer running.
   static navigationOptions = {
     title: "Timer",
   };
-
 
   componentDidMount() {
     AppState.addEventListener('change', this._handleAppStateChange);
@@ -195,30 +198,40 @@ class TimerScreen extends React.Component {
   };
 
   _handleAppStateChange = (nextAppState) => {
-
-    if (nextAppState != "active") {
+    console.log("_handleAppStateChange(): ", nextAppState, this.state.timerStart, this.timeRemaining);
+    if (nextAppState != "active" && this.state.timerStart && this.timeRemaining > 0) {
       cancelAllNotifications();
       PushNotification.localNotificationSchedule({
         id: "1337",
-        message: "Icing timer for " + (this.state.timerDurationSeconds / 1000) + " minutes has finished",
+        message: "Icing timer for " + ((this.state.timerDurationSeconds / 1000) / 60) + " minutes has finished",
         date: new Date(Date.now() + ((this.timeRemaining + 2) * 1000))
       });
-    } else {
+      if (this.canCreateNotifications) {
+        createNotification(this.timeRemaining);
+      }
+    } else if (!this.state.timerStart && this.timerRemaining == 0)  {
+      cancelAllNotifications();
+      if (this.canCreateNotifications) {
+        createNotification(this.timeRemaining);
+      }
+    } else if (nextAppState == "active" && this.state.timerStart && this.timeRemaining > 0) {
+        cancelAllNotifications();
     }
 
   };
 
-  timeRemaining = 15000;
+  // Time remaining in seconds
+  timeRemaining = this.props.navigation.state.params.timerDuration;
 
   state = {
     timerStart: false,
-    //timerDurationSeconds: this.props.navigation.state.params.timerDuration,
-    timerDurationSeconds: 15000,
+    timerDurationSeconds: this.props.navigation.state.params.timerDuration,
     canCreateNotifications: this.props.navigation.state.params.canCreateNotifications,
-    appState: "active",
   };
 
   timerComplete() {
+    this.setState({timerStart: false});
+
     // Remove all notifications AND
     // Schedule a new notification
     if (this.state.canCreateNotifications) {
@@ -226,7 +239,7 @@ class TimerScreen extends React.Component {
       createNotification();
     }
 
-    this.setState({timerStart: false});
+    this.props.navigation.dispatch(NavigationActions.back());
   };
 
   timerStartOrPause() {
@@ -234,7 +247,9 @@ class TimerScreen extends React.Component {
     // Schedule a new notification
     if (this.state.canCreateNotifications) {
       cancelAllNotifications();
-      createNotification();
+      if (this.state.timerStart) {
+        createNotification();
+      }
     }
 
     this.setState({
@@ -244,10 +259,10 @@ class TimerScreen extends React.Component {
 
   getTimeCallback(formattedTime) {
     var splitTime = formattedTime.split(":");
+    var minutesLeft = Number(splitTime[1]);
     var secondsLeft = Number(splitTime[2]);
 
-    this.timeRemaining = secondsLeft;
-
+    this.timeRemaining = (minutesLeft * 60) + secondsLeft;
   };
 
   render() {
